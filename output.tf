@@ -21,3 +21,7 @@ output "primary_db_server_private_ipv4_address" {
 output "redis_server_private_ipv4_address" {
   value = hcloud_server.redis_server.network[*].ip
 }
+
+output "load_balancer_public_ipv4_address" {
+  value = hcloud_load_balancer.load_balancer.ipv4
+}

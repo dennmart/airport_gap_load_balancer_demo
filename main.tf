@@ -187,3 +187,42 @@ resource "hcloud_server" "redis_server" {
     hcloud_network_subnet.private_network_subnet
   ]
 }
+
+resource "hcloud_load_balancer" "load_balancer" {
+  name               = "airportgap-load-balancer"
+  load_balancer_type = "lb11"
+  location           = "hil"
+}
+
+resource "hcloud_load_balancer_target" "load_balancer_web" {
+  load_balancer_id = hcloud_load_balancer.load_balancer.id
+  type             = "label_selector"
+  label_selector   = "server=airportgap-web"
+}
+
+resource "hcloud_managed_certificate" "managed_cert" {
+  name         = "Airport Gap Load Balancer"
+  domain_names = ["balancer.airportgap.com"]
+}
+
+resource "hcloud_load_balancer_service" "load_balancer_service" {
+  load_balancer_id = hcloud_load_balancer.load_balancer.id
+  protocol         = "https"
+
+  http {
+    redirect_http = true
+    certificates  = [hcloud_managed_certificate.managed_cert.id]
+  }
+
+  health_check {
+    protocol = "http"
+    port     = 80
+    interval = 10
+    timeout  = 5
+
+    http {
+      path         = "/up"
+      status_codes = ["200"]
+    }
+  }
+}
