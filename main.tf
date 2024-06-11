@@ -11,9 +11,15 @@ provider "hcloud" {
   token = var.hetzner_cloud_api_token
 }
 
+# Replace the name of the SSH key with the name of your
+# Hetzner Cloud SSH key.
 data "hcloud_ssh_key" "ssh_key" {
   name = "Airport Gap Demo"
 }
+
+##############################################
+# Initial infrastructure setup
+##############################################
 
 resource "hcloud_firewall" "web_server" {
   name = "Web Server"
@@ -188,6 +194,10 @@ resource "hcloud_server" "redis_server" {
   ]
 }
 
+##############################################
+# Load balancer and SSL certificate setup
+##############################################
+
 resource "hcloud_load_balancer" "load_balancer" {
   name               = "airportgap-load-balancer"
   load_balancer_type = "lb11"
@@ -200,11 +210,18 @@ resource "hcloud_load_balancer_target" "load_balancer_web" {
   label_selector   = "server=airportgap-web"
 }
 
+# Replace the domain name you want to use with the generated
+# SSL certificate. You can use fully qualified domain names,
+# wildcard domain names, or subdomains.
 resource "hcloud_managed_certificate" "managed_cert" {
   name         = "Airport Gap Load Balancer"
   domain_names = ["balancer.airportgap.com"]
 }
 
+# If you're setting up the load balancer service at the same time
+# as provisioning the web servers, keep in mind that the health
+# checks will fail until the web servers have an application
+# responding successfully at the health check path.
 resource "hcloud_load_balancer_service" "load_balancer_service" {
   load_balancer_id = hcloud_load_balancer.load_balancer.id
   protocol         = "https"
